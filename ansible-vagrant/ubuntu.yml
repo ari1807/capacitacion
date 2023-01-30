@@ -1,0 +1,59 @@
+---
+- name: provision MV
+  hosts: all
+  tasks:
+       - name: install apache2
+         become: true
+         become_method: sudo
+         ansible.builtin.apt:
+               name: apache2
+               update_cache: true
+       - name: install git
+         become: true
+         become_method: sudo
+         ansible.builtin.apt:
+                 name: git-all
+       - name: add nodejs apt key
+         become: true
+         become_method: sudo
+         apt_key:
+                 url: http://deb.nodesource.com/gpgkey/nodesource.gpg.key
+       - name: add nodejs 16.x ppa for apt repository
+         become: true
+         become_method: sudo
+         apt_repository:
+                 repo: deb https://deb.nodesource.com/node_16.x bionic main
+                 update_cache: yes
+       - name: install nodejs
+         become: true
+         become_method: sudo
+         ansible.builtin.apt:
+                 update_cache: yes
+                 name: nodejs
+       - name: clone and update git repository
+         ansible.builtin.git:
+                 repo: https://gitlab.com/ariadna18/ariadna18.gitlab.io.git
+                 dest: /home/vagrant/ariadna.gitlab.io
+                 clone: yes
+                 update: yes
+                 force: yes
+       - name: export index.html
+         become: true
+         become_method: sudo
+         ansible.builtin.shell:
+                 chdir: ariadna.gitlab.io
+                 creates: index.html
+                 cmd: |
+                         npm i
+                         npm audit fix
+                         npm run resume export index.html
+       - name: copy indext.html to apache root dir
+         become: true
+         become_method: sudo
+         ansible.builtin.shell:
+                 cmd: |
+                         rm /var/www/html/index.html
+                         cp /home/vagrant/ariadna.gitlab.io/index.html /var/www/html/index.html
+
+                
+
